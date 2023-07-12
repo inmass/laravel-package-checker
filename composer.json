@@ -1,0 +1,36 @@
+{
+    "name": "iinmass/laravel-package-checker",
+    "description": "A powerful tool for managing package dependencies in Laravel projects. Get insights into package versions, installation status, and sizes.",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Iinmass\\LaravelPackageChecker\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Iinmass\\LaravelPackageChecker\\Providers\\PackageCheckerServiceProvider"
+            ]
+        }
+    },
+    "version": "1.0",
+    "authors": [
+        {
+            "name": "iinmass",
+            "email": "inmass.idbel@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^8.0",
+        "illuminate/support": "^9.0|^10.0",
+        "laravel/framework": "9.*|10.*",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0",
+        "vimeo/psalm": "^4.30"
+    }
+}
