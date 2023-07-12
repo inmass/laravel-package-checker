@@ -7,6 +7,14 @@
             "Iinmass\\LaravelPackageChecker\\": "src/"
         }
     },
+    "keywords": [
+        "laravel",
+        "package",
+        "checker",
+        "dependency",
+        "management"
+    ],
+    "license": "MIT",
     "extra": {
         "laravel": {
             "providers": [
