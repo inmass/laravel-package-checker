@@ -128,6 +128,8 @@ class PackageCheckerService {
                 return str_replace('v', '', $version);
             }
         }
+
+        return 'No stable version found';
     }
 
     /**
