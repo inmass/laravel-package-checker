@@ -1,6 +1,5 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/inmass/laravel-package-checker/blob/main/LICENSE)
 [![Latest Stable Version](https://img.shields.io/packagist/v/iinmass/laravel-package-checker.svg)](https://packagist.org/packages/iinmass/laravel-package-checker)
-[![Build Status](https://travis-ci.org/your-username/laravel-package-checker.svg?branch=main)](https://travis-ci.org/your-username/laravel-package-checker)
 
 
 ## Features
