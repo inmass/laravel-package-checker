@@ -15,8 +15,31 @@ class PackageCheckerController extends BaseController
     }
     public function listPackages()
     {
+        return view('package-checker::list');
+    }
+
+    public function getInstalledPackages()
+    {
         $installedPackages = $this->packageCheckerService->getInstalledPackages();
-        return view('package-checker::list', compact('installedPackages'));
+        return response()->json($installedPackages);
+    }
+
+    public function getPackageDetails()
+    {
+        $data = [
+            'name' => request('name'),
+            'version' => request('version'),
+        ];
+
+        $requirements = $this->packageCheckerService->getPackageDetailsFor($data);
+        return response()->json($requirements);
+    }
+
+    public function getLatestVersion()
+    {
+        $name = request('name');
+        $latestVersion = $this->packageCheckerService->getLatestVersion($name);
+        return response()->json($latestVersion);
     }
 
     public function getPackageSize()

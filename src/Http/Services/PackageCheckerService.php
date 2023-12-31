@@ -2,11 +2,31 @@
 
 namespace Iinmass\LaravelPackageChecker\Http\Services;
 
-use DirectoryIterator;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 
 class PackageCheckerService {
+
+    /**
+     * Get the installed packages infos
+     * 
+     * @return array
+     */
+    public function getPackagesInfo($packages)
+    {
+        $client = new \GuzzleHttp\Client();
+        $promises = [];
+
+        // Create a promise for each package request
+        foreach ($packages as $packageName) {
+            $packageName = $packageName['name'];
+            $uri = "https://packagist.org/packages/$packageName.json";
+            $promises[$packageName] = $client->getAsync($uri);
+        }
+
+        // Wait for all the requests to complete
+        $results = \GuzzleHttp\Promise\Utils::settle($promises)->wait();
+
+        $this->packagesInfo = $results;
+    }
 
     /**
      * Get the installed packages
@@ -52,31 +72,8 @@ class PackageCheckerService {
             ];
         }
 
-        // get the latest version of the packages
-        $packages = $this->getLatestPackagesFor($packages);
-       
-        // get the status of the packages
-        $packages = $this->getPackageDetailsFor($packages);
-
         return $packages;
     }
-
-    /**
-     * Get the latest version of the packages
-     * 
-     * @param array $installedPackages
-     * @return array
-     */
-
-    private function getLatestPackagesFor(array $installedPackages): array
-    {
-        foreach ($installedPackages as $key => $value) {
-            $installedPackages[$key]['latest_version'] = $this->getLatestVersion($value['name']);
-        }
-
-        return $installedPackages;
-    }
-
 
 
     /**
@@ -104,7 +101,7 @@ class PackageCheckerService {
      * @param string $packageName
      * @return string
      */
-    private function getLatestVersion(string $packageName): string
+    public function getLatestVersion(string $packageName): string
     {
         $packageInfo = $this->getPackageInfo($packageName);
 
@@ -138,17 +135,9 @@ class PackageCheckerService {
      * @param array $installedPackages
      * @return array
      */
-    private function getPackageDetailsFor(array $installedPackages): array
+    public function getPackageDetailsFor(array $package): array
     {
-        foreach ($installedPackages as $key => $value) {
-            // $installedPackages[$key]['status'] = $this->getVersionStatusAndReleaseDate($value['name'], $value['version']);
-            $data = $this->getOtherPackageDetails($value['name'], $value['version']);
-            $installedPackages[$key]['status'] = $data['status'];
-            $installedPackages[$key]['release_date'] = $data['release_date'];
-            $installedPackages[$key]['requirements'] = $data['requirements'];
-        }
-
-        return $installedPackages;
+        return $this->getOtherPackageDetails($package['name'], $package['version']);
     }
 
 
@@ -268,22 +257,6 @@ class PackageCheckerService {
 
 
     /**
-     * Get the size of the packages
-     * 
-     * @param array $installedPackages
-     * @return array
-     */
-    private function getPackageSizesFor(array $installedPackages): array
-    {
-        foreach ($installedPackages as $key => $value) {
-            $installedPackages[$key]['size'] = $this->getPackageSize($value['name'], $value['requirements']);
-        }
-
-        return $installedPackages;
-    }
-
-
-    /**
      * Get the size of the package
      * 
      * @param string $packageName
@@ -309,7 +282,6 @@ class PackageCheckerService {
             }
         }
 
-        // return $this->formatBytes($size);
         return self::formatBytes($size);
     }
 
@@ -394,7 +366,5 @@ class PackageCheckerService {
 
         return $packages;
     }
-
-
 
 }
