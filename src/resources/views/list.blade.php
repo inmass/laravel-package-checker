@@ -22,7 +22,7 @@
             <span class="badge badge-danger">Worse</span>
         </div>
 
-        <table class="table table-striped">
+        <table class="table table-striped" id="packages-table">
             <thead>
                 <tr>
                     <th scope="col">Package Name</th>
@@ -35,35 +35,12 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($installedPackages as $package)
-                    <tr>
-                        <td>{{ $package['name'] }}</td>
-                        <td>
-                            @foreach ($package['requirements'] as $requirement)
-                                <span class="badge badge-primary">{{ $requirement }}</span>
-                            @endforeach
-                        </td>
-                        <td>{{ $package['version'] }}</td>
-                        <td>{{ $package['latest_version'] }}</td>
-                        <td>
-                            {{-- just a colored small circle (good, bad, worse)--}}
-                            @if ($package['status'] === 'good')
-                                <span class="badge badge-success">Good</span>
-                            @elseif ($package['status'] === 'bad')
-                                <span class="badge badge-warning">Bad</span>
-                            @elseif ($package['status'] === 'worse')
-                                <span class="badge badge-danger">Worse</span>
-                            @else
-                                {{ $package['status'] }}
-                            @endif
-
-                        </td>
-                        <td>{{ $package['release_date'] }}</td>
-                        <td class="package-size" data-package-name="{{ $package['name'] }}" data-package-requirements="{{ json_encode($package['requirements']) }}">
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        </td>
-                    </tr>
-                @endforeach
+                <tr>
+                    <td colspan="7" class="text-center">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Loading...
+                    </td>
+                </tr>
             </tbody>
         </table>
         <hr>
@@ -73,27 +50,138 @@
 </body>
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script>
-    jQuery(document).ready(function($) {
-        jQuery('.package-size').each(function() {
-            var packageName = jQuery(this).data('package-name');
-            var packageRequirements = jQuery(this).data('package-requirements');
-            var packageSize = jQuery(this);
+    // get data for the table
+    $.ajax({
+        url: "{{ route('package-checker.get-installed-packages') }}",
+        method: 'GET',
+        success: function(response) {
+            let table = $('#packages-table');
+            // remove loading message
+            table.find('tbody tr').remove();
+            response.forEach(function(item) {
+                // fill the table
+                let row = `<tr>
+                    <td>${item.name}</td>
+                    <td class="package-requirements" data-package-name="${item.name}" data-package-version="${item.version}">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </td>
+                    <td>${item.version}</td>
+                    <td class="package-latest-version" data-package-name="${item.name}">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>    
+                    </td>
+                    <td class="package-status" data-package-name="${item.name}">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </td>
+                    <td class="package-release-date" data-package-name="${item.name}">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </td>
+                    <td class="package-size" data-package-name="${item.name}" >
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    </td>
+                </tr>`;
+                table.append(row);
+            });
+            getPackagesDetails();
+            getLatestVersions();
 
-            let payload = {
-                name: packageName,
-                requirements: packageRequirements,
-            };
+        }
+    });
+
+
+    function getPackagesDetails()
+    {
+        jQuery('.package-requirements').each(function() {
+            var packageName = jQuery(this).data('package-name');
+            var packageVersion = jQuery(this).data('package-version');
+
+            var packageRequirements = jQuery(this);
+            var packageStatus = jQuery('.package-status[data-package-name="' + packageName + '"]');
+            var packageReleaseDate = jQuery('.package-release-date[data-package-name="' + packageName + '"]');
+            var packageSize = jQuery('.package-size[data-package-name="' + packageName + '"]');
 
             jQuery.ajax({
-                url: "{{ route('package-checker.get-size') }}", // "http://localhost:8000/package-checker/get-size/?name=" + packageName,
-                method: 'POST',
-                data: payload,
+                url: "{{ route('package-checker.get-package-details') }}", // "http://localhost:8000/package-checker/get-requirements/?name=" + packageName,
+                method: 'GET',
+                // async: false,
+                data: {
+                    name: packageName,
+                    version: packageVersion,
+                },
                 success: function(response) {
-                    packageSize.html(response);
+                    // fill status, release date and requirements
+                    // release date
+                    packageRequirements.html('');
+                    let requirements = '';
+                    response.requirements.forEach(function(requirement) {
+                        requirements += `<span class="badge badge-primary">${requirement}</span>`;
+                    });
+                    packageRequirements.append(requirements);
+                    // append requirements to package-size as json
+                    packageSize.attr('data-package-requirements', JSON.stringify(response.requirements));
+
+
+                    // status
+                    packageStatus.html('');
+                    if (response.status === 'good') {
+                        packageStatus.append('<span class="badge badge-success">Good</span>');
+                    } else if (response.status === 'bad') {
+                        packageStatus.append('<span class="badge badge-warning">Bad</span>');
+                    } else if (response.status === 'worse') {
+                        packageStatus.append('<span class="badge badge-danger">Worse</span>');
+                    } else {
+                        packageStatus.append(response.status);
+                    }
+
+                    // release date
+                    packageReleaseDate.html('');
+                    packageReleaseDate.append(response.release_date);
+
+                    getVendorSize(packageName);
+
                 }
             });
         });
-    });
+    }
+
+    function getLatestVersions()
+    {
+        jQuery('.package-latest-version').each(function() {
+            var packageName = jQuery(this).data('package-name');
+            var packageLatestVersion = jQuery(this);
+
+            jQuery.ajax({
+                url: "{{ route('package-checker.get-latest-version') }}",
+                method: 'GET',
+                data: {
+                    name: packageName,
+                },
+                success: function(response) {
+                    packageLatestVersion.html('');
+                    packageLatestVersion.append(response);
+                }
+            });
+        });
+    }
+
+    function getVendorSize(packageName)
+    {
+        let packageSize = jQuery('.package-size[data-package-name="' + packageName + '"]');
+        let packageRequirements = packageSize.data('package-requirements');
+        let payload = {
+            name: packageName,
+            requirements: packageRequirements,
+        };
+        jQuery.ajax({
+            url: "{{ route('package-checker.get-size') }}", // "http://localhost:8000/package-checker/get-size/?name=" + packageName,
+            method: 'POST',
+            data: payload,
+            success: function(response) {
+                packageSize.html(response);
+            }
+        });
+    }
+
+
 </script>
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <script src="https://code.highcharts.com/modules/treemap.js"></script>
