@@ -101,10 +101,8 @@ class PackageCheckerService {
      * @param string $packageName
      * @return string
      */
-    public function getLatestVersion(string $packageName): string
+    public function getLatestVersion(array $packageInfo): string
     {
-        $packageInfo = $this->getPackageInfo($packageName);
-
         if (!$packageInfo) {
             return 'Package not found';
         }
@@ -137,41 +135,30 @@ class PackageCheckerService {
      */
     public function getPackageDetailsFor(array $package): array
     {
-        return $this->getOtherPackageDetails($package['name'], $package['version']);
-    }
-
-
-    /**
-     * Get the status of the package
-     *
-     * @param string $packageName
-     * @param string $installedVersion
-     * @return array
-     */
-    private function getOtherPackageDetails(string $packageName, string $installedVersion): array
-    {
-        $packageInfo = $this->getPackageInfo($packageName);
+        $packageInfo = $this->getPackageInfo($package['name']);
 
         if (!$packageInfo) {
             return $this->createPackageNotFoundResponse();
         }
 
-        $desiredVersions = $this->filterDesiredVersions($packageInfo['package']['versions'], $installedVersion);
+        $desiredVersions = $this->filterDesiredVersions($packageInfo['package']['versions'], $package['version']);
 
         if (empty($desiredVersions)) {
-            return $this->createUnknownVersionResponse();
+            $latestVersion = $this->getLatestVersion($packageInfo);
+            return $this->createUnknownVersionResponse($latestVersion);
         }
 
         $desiredVersion = end($desiredVersions);
         $versionReleaseDate = new \DateTime($desiredVersion['time']);
         $status = $this->determineVersionStatus($versionReleaseDate);
 
-        $versionRequirements = $this->extractVersionRequirements($desiredVersion['require']);
+        $versionRequirements = $desiredVersion ? $this->extractVersionRequirements($desiredVersion['require']) : [];
 
         return [
             'status' => $status,
-            'release_date' => $versionReleaseDate->format('Y-m-d'),
-            'requirements' => $versionRequirements
+            'release_date' => $versionReleaseDate ? $versionReleaseDate->format('Y-m-d') : '---',
+            'requirements' => $versionRequirements,
+            'latest_version' => $this->getLatestVersion($packageInfo)
         ];
     }
 
@@ -205,9 +192,9 @@ class PackageCheckerService {
         $diff = $now->diff($releaseDate);
 
         if ($diff->y >= 2) {
-            return 'worse';
+            return 'very_old';
         } elseif ($diff->y >= 1) {
-            return 'bad';
+            return 'old';
         } else {
             return 'good';
         }
@@ -246,12 +233,13 @@ class PackageCheckerService {
      *
      * @return array
      */
-    private function createUnknownVersionResponse(): array
+    private function createUnknownVersionResponse(string $latestVersion): array
     {
         return [
             'status' => 'Unknown version',
             'release_date' => '---',
-            'requirements' => []
+            'requirements' => [],
+            'latest_version' => $latestVersion
         ];
     }
 

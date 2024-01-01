@@ -33,6 +33,11 @@ This page provides a comprehensive overview of your Laravel project's packages, 
 
 The Laravel Package Checker requires no additional configuration. It seamlessly integrates with your Laravel project and retrieves the necessary information from the composer.json file and vendor directory.
 
+Alternatively, you can publish the package's configuration file and customize it to suit your needs by running the following command in your terminal:
+```bash
+php artisan vendor:publish --tag=package-checker-config
+```
+
 ## Contributing
 
 Contributions to the Laravel Package Checker are welcome! If you would like to contribute to the project, please follow these steps:
