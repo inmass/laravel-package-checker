@@ -18,8 +18,8 @@
         <div class="mb-4">
             <p>Package Statuses:</p>
             <span class="badge badge-success">Good</span>
-            <span class="badge badge-warning">Bad</span>
-            <span class="badge badge-danger">Worse</span>
+            <span class="badge badge-warning">Old</span>
+            <span class="badge badge-danger">Very Old</span>
         </div>
 
         <table class="table table-striped" id="packages-table">
@@ -82,7 +82,6 @@
                 table.append(row);
             });
             getPackagesDetails();
-            getLatestVersions();
 
         }
     });
@@ -98,6 +97,7 @@
             var packageStatus = jQuery('.package-status[data-package-name="' + packageName + '"]');
             var packageReleaseDate = jQuery('.package-release-date[data-package-name="' + packageName + '"]');
             var packageSize = jQuery('.package-size[data-package-name="' + packageName + '"]');
+            var packageLatestVersion = jQuery('.package-latest-version[data-package-name="' + packageName + '"]');
 
             jQuery.ajax({
                 url: "{{ route('package-checker.get-package-details') }}", // "http://localhost:8000/package-checker/get-requirements/?name=" + packageName,
@@ -111,23 +111,27 @@
                     // fill status, release date and requirements
                     // release date
                     packageRequirements.html('');
-                    let requirements = '';
-                    response.requirements.forEach(function(requirement) {
-                        requirements += `<span class="badge badge-primary mr-1">${requirement}</span>`;
-                    });
-                    packageRequirements.append(requirements);
-                    // append requirements to package-size as json
-                    packageSize.attr('data-package-requirements', JSON.stringify(response.requirements));
+                    if (response.requirements.length === 0) {
+                        packageRequirements.append('<span class="badge badge-secondary">No known requirements</span>');
+                    } else {
+                        let requirements = '';
+                        response.requirements.forEach(function(requirement) {
+                            requirements += `<span class="badge badge-primary mr-1">${requirement}</span>`;
+                        });
+                        packageRequirements.append(requirements);
+                        // append requirements to package-size as json
+                        packageSize.attr('data-package-requirements', JSON.stringify(response.requirements));
+                    }
 
 
                     // status
                     packageStatus.html('');
                     if (response.status === 'good') {
                         packageStatus.append('<span class="badge badge-success">Good</span>');
-                    } else if (response.status === 'bad') {
-                        packageStatus.append('<span class="badge badge-warning">Bad</span>');
-                    } else if (response.status === 'worse') {
-                        packageStatus.append('<span class="badge badge-danger">Worse</span>');
+                    } else if (response.status === 'old') {
+                        packageStatus.append('<span class="badge badge-warning">Old</span>');
+                    } else if (response.status === 'very_old') {
+                        packageStatus.append('<span class="badge badge-danger">Very Old</span>');
                     } else {
                         packageStatus.append(response.status);
                     }
@@ -136,28 +140,11 @@
                     packageReleaseDate.html('');
                     packageReleaseDate.append(response.release_date);
 
-                    getVendorSize(packageName);
-
-                }
-            });
-        });
-    }
-
-    function getLatestVersions()
-    {
-        jQuery('.package-latest-version').each(function() {
-            var packageName = jQuery(this).data('package-name');
-            var packageLatestVersion = jQuery(this);
-
-            jQuery.ajax({
-                url: "{{ route('package-checker.get-latest-version') }}",
-                method: 'GET',
-                data: {
-                    name: packageName,
-                },
-                success: function(response) {
+                    // latest version
                     packageLatestVersion.html('');
-                    packageLatestVersion.append(response);
+                    packageLatestVersion.append(response.latest_version);
+
+                    getVendorSize(packageName);
                 }
             });
         });
