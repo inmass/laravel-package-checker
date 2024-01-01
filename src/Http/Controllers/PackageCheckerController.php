@@ -3,16 +3,10 @@
 namespace Iinmass\LaravelPackageChecker\Http\Controllers;
 
 use Illuminate\Routing\Controller as BaseController;
-use Iinmass\LaravelPackageChecker\Http\Services\PackageCheckerService;
+USE Iinmass\LaravelPackageChecker\Classes\PackageChecker;
 
 class PackageCheckerController extends BaseController
 {
-    private $packageCheckerService;
-
-    public function __construct()
-    {
-        $this->packageCheckerService = new PackageCheckerService();
-    }
     public function listPackages()
     {
         return view('package-checker::list');
@@ -20,7 +14,7 @@ class PackageCheckerController extends BaseController
 
     public function getInstalledPackages()
     {
-        $installedPackages = $this->packageCheckerService->getInstalledPackages();
+        $installedPackages = PackageChecker::getInstalledPackages();
         return response()->json($installedPackages);
     }
 
@@ -31,14 +25,14 @@ class PackageCheckerController extends BaseController
             'version' => request('version'),
         ];
 
-        $requirements = $this->packageCheckerService->getPackageDetailsFor($data);
+        $requirements = PackageChecker::getPackageDetailsFor($data);
         return response()->json($requirements);
     }
 
     public function getLatestVersion()
     {
         $name = request('name');
-        $latestVersion = $this->packageCheckerService->getLatestVersion($name);
+        $latestVersion = PackageChecker::getLatestVersion($name);
         return response()->json($latestVersion);
     }
 
@@ -49,13 +43,13 @@ class PackageCheckerController extends BaseController
         if (!$name) {
             return response()->json(['error' => 'Invalid request']);
         }
-        $packageSize = $this->packageCheckerService->getPackageSize($name, $requirements);
+        $packageSize = PackageChecker::getPackageSize($name, $requirements);
         return response()->json($packageSize);
     }
 
     public function getVendorSize()
     {
-        $vendorSize = $this->packageCheckerService->getAllPackageSizes();
+        $vendorSize = PackageChecker::getAllPackageSizes();
         $headOfResponse = [];
         $index = 0;
         foreach ($vendorSize as $package) {

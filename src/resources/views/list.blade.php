@@ -113,7 +113,7 @@
                     packageRequirements.html('');
                     let requirements = '';
                     response.requirements.forEach(function(requirement) {
-                        requirements += `<span class="badge badge-primary">${requirement}</span>`;
+                        requirements += `<span class="badge badge-primary mr-1">${requirement}</span>`;
                     });
                     packageRequirements.append(requirements);
                     // append requirements to package-size as json
@@ -174,6 +174,9 @@
         jQuery.ajax({
             url: "{{ route('package-checker.get-size') }}", // "http://localhost:8000/package-checker/get-size/?name=" + packageName,
             method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': "{{ csrf_token() }}"
+            },
             data: payload,
             success: function(response) {
                 packageSize.html(response);
